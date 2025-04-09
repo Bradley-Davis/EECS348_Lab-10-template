@@ -33,19 +33,24 @@ bool isValidDouble(const std::string& str) {
     if (i < str.size() && str[i] == '.') {
         hasDot = true;
         i++;
+        // Scan any digits after the decimal
         while (i < str.size() && isDigit(str[i])) {
             hasDigitsAfter = true;
             i++;
         }
 
-        // If there's a dot, we need digits either before or after the dot
-        if (!hasDigitsAfter && !hasDigitsBefore) return false;
+        // ***** NEW requirement: if there's a decimal, there MUST be digits after it.
+        //     So "12." must be invalid.
+        if (hasDot && !hasDigitsAfter) {
+            return false;
+        }
     }
 
     // No extra characters allowed
     if (i != str.size()) return false;
 
     // Must have digits either before or after decimal
+    // (If we want 0.123 to be valid, it has no digitsBefore, but does have digitsAfter.)
     return hasDigitsBefore || hasDigitsAfter;
 }
 
@@ -96,17 +101,17 @@ void normalizeDoubles(std::string& s1, std::string& s2) {
     s2 = sign2 + int2 + (maxFracLen > 0 ? "." + frac2 : "");
 }
 
-// Convert string to double using std::stod (for a “correct” numeric check)
+// Convert string to double using std::stod (for checking correct numeric result)
 double expected(const std::string& start) {
     double number = parse_number(start);
-    double test = -123.456;   // We are effectively adding -123.456
+    double test   = -123.456;   // We are effectively adding -123.456
     return number + test;
 }
 
 int main() {
     std::ifstream file("input.txt");
     std::string line;
-    std::string reference = "-123.456";  // We will do: line + (-123.456)
+    std::string reference = "-123.456";  // We'll do: line + (-123.456)
 
     if (!file) {
         std::cout << "Failed to open input.txt\n";
@@ -155,14 +160,14 @@ int main() {
                     carry     = temp.second;
                 }
                 if (carry == '1') {
-                    // Insert the leftover carry at front
+                    // Insert the leftover carry at the front
                     result.insert(result.begin(), '1');
                 }
                 // Re-insert the sign
                 if (lineNegative) {
                     result.insert(result.begin(), '-');
                 } 
-                // (Or insert '+', if you want explicit sign for positives)
+                // (Or insert '+' if you want an explicit sign for positives)
 
             } else {
                 // Case 2: different signs => subtract absolute values
@@ -197,7 +202,7 @@ int main() {
                 // Final sign matches the absolute bigger
                 bool finalNegative;
                 if (lineIsLarger) {
-                    finalNegative = lineNegative; 
+                    finalNegative = lineNegative;
                 } else {
                     finalNegative = refNegative;
                 }
